@@ -53,8 +53,15 @@ float bvely = 0;
 int score[] = {0,0};
 int scoreLimit = 10;
 short winner = 0;
+//Audio
+bool is_cd_playing = 0;
+//main menu
+enum MAIN_OP {MULTIPLAYER,MEN_OPTIONS};
+enum MAIN_OP currentMenuOption = MULTIPLAYER;
+int selSprite=0;
+//STATES
 enum STATE {MAIN, GAME, OPTIONS};
-enum STATE currentState = GAME;
+enum STATE currentState = MAIN;
 void 			ball_move(void){
 	bx += bvelx; 
 	by += bvely;
@@ -123,16 +130,29 @@ void			game_draw(void){
 	jo_sprite_draw3D2(ballSprite,bx,by,500);
 	
 }
+void main_menu_draw(void){
+	jo_font_printf(my_font, JO_TV_WIDTH/4, 40, 4.0f, "PAENG");
+	jo_sprite_draw3D2(selSprite,10,10,500);
+}
 void			my_draw(void)
 {
 	if (currentState == GAME){
 		game_draw();
+		 if (!is_cd_playing)
+    	{
+        	/* the first track is reserved for the game binary so the first track is 2 */
+        	jo_audio_play_cd_track(2, 2, 1);
+        	is_cd_playing = 1;
+    	}
+	}else if (currentState == MAIN){
+		main_menu_draw();
 	}
 	jo_printf(0,0,"bx: %d by:%d",bx);
 	jo_printf(0,1,"p1hit: %d",p1hit);
 	jo_printf(0,2, "p2hit:%d",p2hit);
 	jo_printf(0, 3, "Sprite memory usage: %d%% ", jo_sprite_usage_percent()); 
 	jo_printf(0, 4, "Dynamic memory usage: %d%%  ", jo_memory_usage_percent());
+	jo_printf(0,5, "p1y:%d  TVHEIGHT:%d",p1y+p1h+p1vel,JO_TV_HEIGHT);
 }
 void reset(void){
 	bs = 3;
@@ -155,8 +175,8 @@ void			my_gamepad(void)
 		p1y += p1vel;
 	if (jo_is_pad1_key_pressed(JO_KEY_START) && (winner > 0 ) )
         reset();
-    if (jo_is_pad1_key_pressed(JO_KEY_A))
-        jo_audio_play_cd_track(2, 2, 1);/*
+   /* if (jo_is_pad1_key_pressed(JO_KEY_A))
+        jo_audio_play_cd_track(2, 2, 1);
     if (jo_is_pad1_key_down(JO_KEY_B))
         draw_circle_at_cursor_pos(40);
     
@@ -164,7 +184,7 @@ void			my_gamepad(void)
 	//Player2
 	if(!jo_is_pad2_available())
 		return;
-	if (jo_is_pad2_key_pressed(JO_KEY_UP) && p2y+-p2vel > 0)
+	if (jo_is_pad2_key_pressed(JO_KEY_UP) && p2y-p2vel > 0)
 		p2y -= p2vel;
 	if (jo_is_pad2_key_pressed(JO_KEY_DOWN) && p2y+p2h+p2vel < JO_TV_HEIGHT)
 		p2y += p2vel;
@@ -180,18 +200,22 @@ void			load_audio(void){
 	jo_audio_load_pcm("CHIME.PCM",JoSoundMono16Bit, &chime);
 }
 
+void change_background(char background[]){
+	//Background
+    jo_img      bg;
+    bg.data = NULL;
+    jo_tga_loader(&bg, "BG", background, JO_COLOR_Transparent);
+    jo_set_background_sprite(&bg, 0, 0);
+    jo_free_img(&bg);	
+}
 void			jo_main(void)
 {
 	jo_core_init(JO_COLOR_Black);
 	p1Sprite = jo_sprite_add_tga("TEX", "P1.TGA", JO_COLOR_Transparent);
 	p2Sprite = jo_sprite_add_tga("TEX", "P2.TGA", JO_COLOR_Transparent);
+	selSprite = jo_sprite_add_tga("TEX","SEL.TGA",JO_COLOR_Green);
 	ballSprite = jo_sprite_add_tga("TEX","BALL.TGA",JO_COLOR_Black);
-	//Background
-    jo_img      bg;
-    bg.data = NULL;
-    jo_tga_loader(&bg, "BG", "BAK.TGA", JO_COLOR_Transparent);
-    jo_set_background_sprite(&bg, 0, 0);
-    jo_free_img(&bg);
+
 	load_audio();
 	
 	my_font = jo_font_load(JO_ROOT_DIR, "FONT.TGA", JO_COLOR_Green, 8, 8, 2, "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ!\"?=%&',.()*+-/");

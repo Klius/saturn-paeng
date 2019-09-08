@@ -1,3 +1,3 @@
 call clean.bat
 call compile.bat
-call run_with_yabause.bat
+rem call run_with_yabause.bat
