@@ -58,6 +58,13 @@ bool is_cd_playing = 0;
 //main menu
 enum MAIN_OP {MULTIPLAYER,MEN_OPTIONS};
 enum MAIN_OP currentMenuOption = MULTIPLAYER;
+int p1Timeout = 0;
+int p2Timeout = 0;
+int iptimeout = 10;
+int cursorPos[2][4] = {
+	{98,110,208,120},
+	{120,142,188,150}
+};
 int selSprite=0;
 //STATES
 enum STATE {MAIN, GAME, OPTIONS};
@@ -132,7 +139,14 @@ void			game_draw(void){
 }
 void main_menu_draw(void){
 	jo_font_printf(my_font, JO_TV_WIDTH/4, 40, 4.0f, "PAENG");
-	jo_sprite_draw3D2(selSprite,10,10,500);
+	jo_font_printf(my_font,JO_TV_WIDTH/2 -JO_TV_WIDTH/6,120,1.0f,"MULTIPLAYER");
+	jo_font_printf(my_font,JO_TV_WIDTH/2 -JO_TV_WIDTH/10,150,1.0f,"OPTIONS");
+	jo_sprite_draw3D2(selSprite,cursorPos[currentMenuOption][0],cursorPos[currentMenuOption][1],500);
+	jo_sprite_enable_horizontal_flip ();
+	jo_sprite_enable_vertical_flip();
+	jo_sprite_draw3D2(selSprite,cursorPos[currentMenuOption][2],cursorPos[currentMenuOption][3],500);
+	jo_sprite_disable_horizontal_flip ();
+	jo_sprite_disable_vertical_flip();
 }
 void			my_draw(void)
 {
@@ -153,6 +167,9 @@ void			my_draw(void)
 	jo_printf(0, 3, "Sprite memory usage: %d%% ", jo_sprite_usage_percent()); 
 	jo_printf(0, 4, "Dynamic memory usage: %d%%  ", jo_memory_usage_percent());
 	jo_printf(0,5, "p1y:%d  TVHEIGHT:%d",p1y+p1h+p1vel,JO_TV_HEIGHT);
+	jo_printf(0,6, "currentMenuOption:%d ",currentMenuOption);
+	jo_printf(0,9, "cursor1 X:%d Y:%d",cursorPos[currentMenuOption][0],cursorPos[currentMenuOption][1]);
+	jo_printf(0,10, "cursor2 X:%d Y:%d",cursorPos[currentMenuOption][2],cursorPos[currentMenuOption][3]);
 }
 void reset(void){
 	bs = 3;
@@ -167,34 +184,82 @@ void reset(void){
 }
 void			my_gamepad(void)
 {
-	if (!jo_is_pad1_available())
-		return ;
-	if (jo_is_pad1_key_pressed(JO_KEY_UP) && p1y-p1vel > 0)
-		p1y -= p1vel;
-	if (jo_is_pad1_key_pressed(JO_KEY_DOWN) && p1y+p1h+p1vel < JO_TV_HEIGHT)
-		p1y += p1vel;
-	if (jo_is_pad1_key_pressed(JO_KEY_START) && (winner > 0 ) )
-        reset();
-   /* if (jo_is_pad1_key_pressed(JO_KEY_A))
-        jo_audio_play_cd_track(2, 2, 1);
-    if (jo_is_pad1_key_down(JO_KEY_B))
-        draw_circle_at_cursor_pos(40);
-    
-	*/
-	//Player2
-	if(!jo_is_pad2_available())
-		return;
-	if (jo_is_pad2_key_pressed(JO_KEY_UP) && p2y-p2vel > 0)
-		p2y -= p2vel;
-	if (jo_is_pad2_key_pressed(JO_KEY_DOWN) && p2y+p2h+p2vel < JO_TV_HEIGHT)
-		p2y += p2vel;
-    //if (jo_is_pad2_key_pressed(JO_KEY_A))
-        //jo_put_pixel_in_background(p2x, p2y, JO_COLOR_Red);
-	/*if (jo_is_pad2_key_down(JO_KEY_B))
-        //draw_circle_at_cursor_pos(40);
-    if (jo_is_pad2_key_pressed(JO_KEY_START))
-        //jo_clear_background(JO_COLOR_White);
-	*/
+	if(currentState == GAME){
+		if (!jo_is_pad1_available())
+			return ;
+		if (jo_is_pad1_key_pressed(JO_KEY_UP) && p1y-p1vel > 0)
+			p1y -= p1vel;
+		if (jo_is_pad1_key_pressed(JO_KEY_DOWN) && p1y+p1h+p1vel < JO_TV_HEIGHT)
+			p1y += p1vel;
+		if (jo_is_pad1_key_pressed(JO_KEY_START) && (winner > 0 ) )
+			reset();
+	/* if (jo_is_pad1_key_pressed(JO_KEY_A))
+			jo_audio_play_cd_track(2, 2, 1);
+		if (jo_is_pad1_key_down(JO_KEY_B))
+			draw_circle_at_cursor_pos(40);
+		
+		*/
+		//Player2
+		if(!jo_is_pad2_available())
+			return;
+		if (jo_is_pad2_key_pressed(JO_KEY_UP) && p2y-p2vel > 0)
+			p2y -= p2vel;
+		if (jo_is_pad2_key_pressed(JO_KEY_DOWN) && p2y+p2h+p2vel < JO_TV_HEIGHT)
+			p2y += p2vel;
+	}
+	if(currentState == MAIN){
+		if (!jo_is_pad1_available())
+			return ;
+		if(p1Timeout < 0){
+			if (jo_is_pad1_key_pressed(JO_KEY_A)){
+				if(currentMenuOption == MULTIPLAYER)
+					currentState = GAME;
+			}
+			if (jo_is_pad1_key_pressed(JO_KEY_C)){
+				if (jo_is_pad1_key_pressed(JO_KEY_UP))
+					cursorPos[currentMenuOption][1]--;
+
+				if (jo_is_pad1_key_pressed(JO_KEY_DOWN))
+					cursorPos[currentMenuOption][1]++;
+
+				if (jo_is_pad1_key_pressed(JO_KEY_LEFT))
+					cursorPos[currentMenuOption][0]--;
+
+				if (jo_is_pad1_key_pressed(JO_KEY_RIGHT))
+					cursorPos[currentMenuOption][0]++;
+
+				return;
+			}
+			if (jo_is_pad1_key_pressed(JO_KEY_B)){
+				if (jo_is_pad1_key_pressed(JO_KEY_UP))
+					cursorPos[currentMenuOption][3]--;
+				if (jo_is_pad1_key_pressed(JO_KEY_DOWN))
+					cursorPos[currentMenuOption][3]++;
+				if (jo_is_pad1_key_pressed(JO_KEY_LEFT))
+					cursorPos[currentMenuOption][2]--;
+				if (jo_is_pad1_key_pressed(JO_KEY_RIGHT))
+					cursorPos[currentMenuOption][2]++;
+
+				return;
+				
+			}
+			if (jo_is_pad1_key_pressed(JO_KEY_UP)){
+				currentMenuOption--;
+				p1Timeout = iptimeout;
+				if (currentMenuOption == -1)
+					currentMenuOption = 1;
+			}
+			if (jo_is_pad1_key_pressed(JO_KEY_DOWN)){
+				currentMenuOption++;
+				p1Timeout = iptimeout;
+				if (currentMenuOption > 1)
+					currentMenuOption = 0;
+			}
+			
+		}else{
+			p1Timeout--;
+		}
+	}
 }
 void			load_audio(void){
 	jo_audio_load_pcm("CHIME.PCM",JoSoundMono16Bit, &chime);
