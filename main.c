@@ -27,6 +27,32 @@
 */
 
 #include <jo/jo.h>
+/*
+**
+** Structures
+**
+*/
+struct mod{
+	int id;
+	int type;
+	int ttl;
+	int x;
+	int y;
+	int w;
+	int sprite;
+	int animationId;
+};
+/*
+*
+* POWERUPS to make
+* confusion(inverted controls)
+* Max/min Ball
+* Max/min player
+* speed player
+* wall
+*/
+int ring_anim_id=0;
+int powSprites[2];
 static jo_font      *my_font;
 static jo_sound     chime;
 int p1x = 30;
@@ -115,6 +141,7 @@ int			ball_collision(int px, int py,int pw, int ph){
 	return 0;
 }
 void			game_draw(void){
+	jo_sprite_draw3D(jo_get_anim_sprite(ring_anim_id), 0, 0, 600);
 	jo_font_printf(my_font, JO_TV_WIDTH/2-80, 20, 4.0f, "%d",score[0]);
 	jo_font_printf(my_font, JO_TV_WIDTH/2+60, 20, 4.0f, "%d",score[1]);
 	if (winner == 0){
@@ -264,7 +291,9 @@ void			my_gamepad(void)
 void			load_audio(void){
 	jo_audio_load_pcm("CHIME.PCM",JoSoundMono16Bit, &chime);
 }
-
+void load_pow_sprites(void){
+	powSprites[0] =jo_sprite_add_image_pack("PMAXBALL", "PMB.TEX", JO_COLOR_Black);
+}
 void change_background(char background[]){
 	//Background
     jo_img      bg;
@@ -280,7 +309,12 @@ void			jo_main(void)
 	p2Sprite = jo_sprite_add_tga("TEX", "P2.TGA", JO_COLOR_Transparent);
 	selSprite = jo_sprite_add_tga("TEX","SEL.TGA",JO_COLOR_Green);
 	ballSprite = jo_sprite_add_tga("TEX","BALL.TGA",JO_COLOR_Black);
-
+	load_pow_sprites();
+	/* Then, you create the animation by giving the first sprite Id, the total of sprites, and the framerate */
+	ring_anim_id = jo_create_sprite_anim(powSprites[0], 5, 5);
+	/* Finally, you chose the type of animation you wants => next step in my_draw() */
+	jo_start_sprite_anim_loop(ring_anim_id);
+	//
 	load_audio();
 	
 	my_font = jo_font_load(JO_ROOT_DIR, "FONT.TGA", JO_COLOR_Green, 8, 8, 2, "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ!\"?=%&',.()*+-/");
