@@ -32,7 +32,7 @@
 ** Structures
 **
 */
-struct mod{
+struct mod {
 	int id;
 	int type;
 	int ttl;
@@ -95,6 +95,12 @@ int selSprite=0;
 //STATES
 enum STATE {MAIN, GAME, OPTIONS};
 enum STATE currentState = MAIN;
+struct mod test,test2;
+/******************************************************
+***
+***		CODE
+***
+*******************************************************/
 void 			ball_move(void){
 	bx += bvelx; 
 	by += bvely;
@@ -141,7 +147,9 @@ int			ball_collision(int px, int py,int pw, int ph){
 	return 0;
 }
 void			game_draw(void){
-	jo_sprite_draw3D(jo_get_anim_sprite(ring_anim_id), 0, 0, 600);
+	jo_sprite_draw3D2(jo_get_anim_sprite(test.animationId), test.x, test.y,600);
+	if (test2.id == 0)
+		jo_sprite_draw3D2(jo_get_anim_sprite(test2.animationId), test2.x, test2.y,600);
 	jo_font_printf(my_font, JO_TV_WIDTH/2-80, 20, 4.0f, "%d",score[0]);
 	jo_font_printf(my_font, JO_TV_WIDTH/2+60, 20, 4.0f, "%d",score[1]);
 	if (winner == 0){
@@ -209,6 +217,17 @@ void reset(void){
 	p1y = JO_TV_HEIGHT/2-31;
 	p2y = JO_TV_HEIGHT/2-31;
 }
+void spawn_modifier(void){
+	test2.id=0;
+	test2.type=0;
+	test2.ttl=10;
+	test2.x=120;
+	test2.y=JO_TV_HEIGHT/2;
+	test2.w=0;
+	test2.sprite=0;
+	test2.animationId=jo_create_sprite_anim(powSprites[test2.sprite], 5, 5);
+	jo_start_sprite_anim_loop(test2.animationId);
+}
 void			my_gamepad(void)
 {
 	if(currentState == GAME){
@@ -220,7 +239,10 @@ void			my_gamepad(void)
 			p1y += p1vel;
 		if (jo_is_pad1_key_pressed(JO_KEY_START) && (winner > 0 ) )
 			reset();
-	/* if (jo_is_pad1_key_pressed(JO_KEY_A))
+		if (jo_is_pad1_key_pressed(JO_KEY_A))
+			spawn_modifier();
+	/* 
+		if (jo_is_pad1_key_pressed(JO_KEY_A))
 			jo_audio_play_cd_track(2, 2, 1);
 		if (jo_is_pad1_key_down(JO_KEY_B))
 			draw_circle_at_cursor_pos(40);
@@ -312,8 +334,17 @@ void			jo_main(void)
 	load_pow_sprites();
 	/* Then, you create the animation by giving the first sprite Id, the total of sprites, and the framerate */
 	ring_anim_id = jo_create_sprite_anim(powSprites[0], 5, 5);
+	test.id=0;
+	test.type=0;
+	test.ttl=10;
+	test.x=50;
+	test.y=JO_TV_HEIGHT/2;
+	test.w=0;
+	test.sprite=0;
+	test.animationId=jo_create_sprite_anim(powSprites[test.sprite], 5, 5);
 	/* Finally, you chose the type of animation you wants => next step in my_draw() */
-	jo_start_sprite_anim_loop(ring_anim_id);
+	jo_start_sprite_anim_loop(test.animationId);
+	//jo_start_sprite_anim_loop(ring_anim_id);
 	//
 	load_audio();
 	
