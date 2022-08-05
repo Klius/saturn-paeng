@@ -103,7 +103,7 @@ void print_debug(void){
 	if (currentState == GAME){
 		jo_printf(0,0,"bx: %d by:%d",ball.x,ball.y);
 		jo_printf(0,1,"p1hit: %d",p1.hit);
-		jo_printf(0,2, "p2.hit:%d",p2.hit);
+		jo_printf(0,2, "p2hit:%d",p2.hit);
 		jo_printf(0,5, "p1y:%d  TVHEIGHT:%d",p1.y+p1.h+p1.vel,JO_TV_HEIGHT);
 	}
 	if (currentState == MAIN){
@@ -112,35 +112,14 @@ void print_debug(void){
 		jo_printf(0,10, "cursor2 X:%d Y:%d",cursorPos[currentMenuOption][2],cursorPos[currentMenuOption][3]);
 	}
 }
-void ball_move(void){
-	ball.x += ball.velx; 
-	ball.y += ball.vely;
-	if( ball.x > JO_TV_WIDTH){
-		ball.x = JO_TV_WIDTH/2 -8;
-		ball.velx *= -1;
-		++score[0];
-		if (score[0] == scoreLimit){
-			winner = 1;
+void check_score(void){
+	for(int i=0;i<2;i++){
+	if (score[i] == scoreLimit){
+			winner = i+1;
 		}
-	}else if( ball.x+ball.w < 0 ){
-		ball.x = JO_TV_WIDTH/2 -8;
-		ball.velx *= -1;
-		++score[1];
-		if (score[1] == scoreLimit){
-			winner = 2;
-		}
-	}
-	if (ball.y < 0){
-		ball.vely *=-1;
-		ball.y = 2;
-	}
-	if(ball.y+ball.w > JO_TV_HEIGHT){
-		ball.vely *=-1;
-		ball.y = JO_TV_HEIGHT -ball.w;
 	}
 }
-
-void			game_draw(void){
+void game_draw(void){
 	jo_sprite_draw3D2(jo_get_anim_sprite(test.animationId), test.x, test.y,600);
 	if (test2.id == 0)
 		jo_sprite_draw3D2(jo_get_anim_sprite(test2.animationId), test2.x, test2.y,600);
@@ -160,14 +139,15 @@ void			game_draw(void){
 		}else{
 			--p2.hit;
 		}
-		ball_move();
+		ball_move(&ball, score);
+		check_score();
 	}
 	else{
 		jo_font_printf(my_font, 30, JO_TV_HEIGHT/2-20, 2.0f, "PLAYER %d WINS",winner);
 	}
 	jo_sprite_draw3D2(p1.sprite, p1.x, p1.y, 500);
 	jo_sprite_draw3D2(p2.sprite, p2.x, p2.y, 500);
-	jo_sprite_draw3D2(ball.sprite,ball.x,ball.y,500);
+	ball_draw(&ball);
 	
 }
 void main_menu_draw(void){
@@ -181,7 +161,7 @@ void main_menu_draw(void){
 	jo_sprite_disable_horizontal_flip ();
 	jo_sprite_disable_vertical_flip();
 }
-void			my_draw(void)
+void my_draw(void)
 {
 	if (currentState == GAME){
 		game_draw();

@@ -27,7 +27,37 @@ int			ball_collision(int px, int py,int pw, int ph,Ball* ball){
 	return 0;
 }
 
+void ball_move(Ball* ball,int *score){
+	ball->x += ball->velx; 
+	ball->y += ball->vely;
+	if( ball->x > JO_TV_WIDTH){
+		ball->x = JO_TV_WIDTH/2 -8;
+		ball->velx *= -1;
+		*(score+0) = *(score+0) +1;/*
+		if (score[0] == scoreLimit){
+			winner = 1;
+		}*/
+	}else if( ball->x+ball->w < 0 ){
+		ball->x = JO_TV_WIDTH/2 -8;
+		ball->velx *= -1;
+		*(score+1) = *(score+1)+1;
+		/*if (score[1] == scoreLimit){
+			winner = 2;
+		}*/
+	}
+	if (ball->y < 0){
+		ball->vely *=-1;
+		ball->y = 2;
+	}
+	if(ball->y+ball->w > JO_TV_HEIGHT){
+		ball->vely *=-1;
+		ball->y = JO_TV_HEIGHT -ball->w;
+	}
+}
 
+void ball_draw(Ball* ball){
+	jo_sprite_draw3D2(ball->sprite,ball->x,ball->y,500);
+}
 /*
 ** END OF FILE
 */
