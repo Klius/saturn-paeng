@@ -27,6 +27,8 @@
 */
 
 #include <jo/jo.h>
+#include "ball.h"
+#include "paddle.h"
 /*
 **
 ** Structures
@@ -55,27 +57,11 @@ int ring_anim_id=0;
 int powSprites[2];
 static jo_font      *my_font;
 static jo_sound     chime;
-int p1x = 30;
-int p1y = JO_TV_HEIGHT/2-31;
-int p1w = 8;
-int p1h = 62;
-int p1vel = 2;
-int p1Sprite = 0;
-int p1hit = 0;
-int p2x = JO_TV_WIDTH - 38;
-int p2y = JO_TV_HEIGHT/2-31;
-int p2w = 8;
-int p2h = 62;
-int p2vel = 2;
-int p2Sprite = 0;
-int p2hit = 0;
-int ballSprite = 0;
-float bx = JO_TV_WIDTH/2 -8;
-float by = JO_TV_HEIGHT/2 -8;
-int bw = 16;
-float bs = 3;
-float bvelx = 3;
-float bvely = 0;
+static int INPUT_TIMEOUT = 10;
+Paddle p1 = PADDLE_P1_DEFAULT;
+Paddle p2 = PADDLE_P2_DEFAULT;
+Ball ball = T_BALL_DEFAULT;
+static int sprite_ball;
 int score[] = {0,0};
 int scoreLimit = 10;
 short winner = 0;
@@ -84,9 +70,8 @@ bool is_cd_playing = 0;
 //main menu
 enum MAIN_OP {MULTIPLAYER,MEN_OPTIONS};
 enum MAIN_OP currentMenuOption = MULTIPLAYER;
-int p1Timeout = 0;
-int p2Timeout = 0;
-int iptimeout = 10;
+
+
 int cursorPos[2][4] = {
 	{98,110,208,120},
 	{120,142,188,150}
@@ -95,57 +80,66 @@ int selSprite=0;
 //STATES
 enum STATE {MAIN, GAME, OPTIONS};
 enum STATE currentState = MAIN;
+bool DEBUG = false; 
 struct mod test,test2;
+
+int MOD_ANIMATION;
 /******************************************************
 ***
 ***		CODE
 ***
 *******************************************************/
-void 			ball_move(void){
-	bx += bvelx; 
-	by += bvely;
-	if( bx > JO_TV_WIDTH){
-		bx = JO_TV_WIDTH/2 -8;
-		bvelx *= -1;
+void change_background(char* background){
+	//Background
+    jo_img      bg;
+    bg.data = NULL;
+    jo_tga_loader(&bg, "BG", background, JO_COLOR_Black);
+    jo_set_background_sprite(&bg, 0, 0);
+    jo_free_img(&bg);	
+}
+void print_debug(void){
+	jo_printf(0, 3, "Sprite memory usage: %d%% ", jo_sprite_usage_percent()); 
+	jo_printf(0, 4, "Dynamic memory usage: %d%%  ", jo_memory_usage_percent());
+	if (currentState == GAME){
+		jo_printf(0,0,"bx: %d by:%d",ball.x,ball.y);
+		jo_printf(0,1,"p1hit: %d",p1.hit);
+		jo_printf(0,2, "p2.hit:%d",p2.hit);
+		jo_printf(0,5, "p1y:%d  TVHEIGHT:%d",p1.y+p1.h+p1.vel,JO_TV_HEIGHT);
+	}
+	if (currentState == MAIN){
+		jo_printf(0,6, "currentMenuOption:%d ",currentMenuOption);
+		jo_printf(0,9, "cursor1 X:%d Y:%d",cursorPos[currentMenuOption][0],cursorPos[currentMenuOption][1]);
+		jo_printf(0,10, "cursor2 X:%d Y:%d",cursorPos[currentMenuOption][2],cursorPos[currentMenuOption][3]);
+	}
+}
+void ball_move(void){
+	ball.x += ball.velx; 
+	ball.y += ball.vely;
+	if( ball.x > JO_TV_WIDTH){
+		ball.x = JO_TV_WIDTH/2 -8;
+		ball.velx *= -1;
 		++score[0];
 		if (score[0] == scoreLimit){
 			winner = 1;
 		}
-	}else if( bx+bw < 0 ){
-		bx = JO_TV_WIDTH/2 -8;
-		bvelx *= -1;
+	}else if( ball.x+ball.w < 0 ){
+		ball.x = JO_TV_WIDTH/2 -8;
+		ball.velx *= -1;
 		++score[1];
 		if (score[1] == scoreLimit){
 			winner = 2;
 		}
 	}
-	if (by < 0){
-		bvely *=-1;
-		by = 2;
+	if (ball.y < 0){
+		ball.vely *=-1;
+		ball.y = 2;
 	}
-	if(by+bw > JO_TV_HEIGHT){
-		bvely *=-1;
-		by = JO_TV_HEIGHT -bw;
+	if(ball.y+ball.w > JO_TV_HEIGHT){
+		ball.vely *=-1;
+		ball.y = JO_TV_HEIGHT -ball.w;
 	}
 }
-int			ball_collision(int px, int py,int pw, int ph){
-	if((bx < px+pw) && (px < bx+bw) && (by < py+ph) && (py < by+bw))
-	//jo_hitbox_detection (pSprite, px, py, ballSprite, bx, by) )
-	{
-		float relativeIntersectY = (py+(ph/2)) - (by+(bw/2));
-    	float normalizedRelativeIntersectionY = (relativeIntersectY/(ph/2));
-    	float bounceAngle = normalizedRelativeIntersectionY * 60;
-    	bvelx *= -1;
-		bvely = bs*-jo_sinf(bounceAngle);
-		bx += bvelx;
-		by += bvely;
-		jo_audio_play_sound(&chime);
-		return 10;
-		//self:setSpeed(self.speed*-1,self.speed*-math.sin(bounceAngle))
 
-	}
-	return 0;
-}
 void			game_draw(void){
 	jo_sprite_draw3D2(jo_get_anim_sprite(test.animationId), test.x, test.y,600);
 	if (test2.id == 0)
@@ -153,23 +147,27 @@ void			game_draw(void){
 	jo_font_printf(my_font, JO_TV_WIDTH/2-80, 20, 4.0f, "%d",score[0]);
 	jo_font_printf(my_font, JO_TV_WIDTH/2+60, 20, 4.0f, "%d",score[1]);
 	if (winner == 0){
-		if(p1hit == 0){
-			p1hit = ball_collision(p1x,p1y,p1w,p1h);
+		if(p1.hit == 0){
+			p1.hit = ball_collision(p1.x,p1.y,p1.w,p1.h,&ball);
+			if (p1.hit==10)
+				jo_audio_play_sound(&chime);
 		}else{
-			--p1hit;
-		}if(p2hit == 0 ){
-			p2hit = ball_collision(p2x,p2y,p2w,p2h);
+			--p1.hit;
+		}if(p2.hit == 0 ){
+			p2.hit = ball_collision(p2.x,p2.y,p2.w,p2.h,&ball);
+				if (p2.hit==10)
+					jo_audio_play_sound(&chime);
 		}else{
-			--p2hit;
+			--p2.hit;
 		}
 		ball_move();
 	}
 	else{
 		jo_font_printf(my_font, 30, JO_TV_HEIGHT/2-20, 2.0f, "PLAYER %d WINS",winner);
 	}
-	jo_sprite_draw3D2(p1Sprite, p1x, p1y, 500);
-	jo_sprite_draw3D2(p2Sprite, p2x, p2y, 500);
-	jo_sprite_draw3D2(ballSprite,bx,by,500);
+	jo_sprite_draw3D2(p1.sprite, p1.x, p1.y, 500);
+	jo_sprite_draw3D2(p2.sprite, p2.x, p2.y, 500);
+	jo_sprite_draw3D2(ball.sprite,ball.x,ball.y,500);
 	
 }
 void main_menu_draw(void){
@@ -196,36 +194,31 @@ void			my_draw(void)
 	}else if (currentState == MAIN){
 		main_menu_draw();
 	}
-	jo_printf(0,0,"bx: %d by:%d",bx);
-	jo_printf(0,1,"p1hit: %d",p1hit);
-	jo_printf(0,2, "p2hit:%d",p2hit);
-	jo_printf(0, 3, "Sprite memory usage: %d%% ", jo_sprite_usage_percent()); 
-	jo_printf(0, 4, "Dynamic memory usage: %d%%  ", jo_memory_usage_percent());
-	jo_printf(0,5, "p1y:%d  TVHEIGHT:%d",p1y+p1h+p1vel,JO_TV_HEIGHT);
-	jo_printf(0,6, "currentMenuOption:%d ",currentMenuOption);
-	jo_printf(0,9, "cursor1 X:%d Y:%d",cursorPos[currentMenuOption][0],cursorPos[currentMenuOption][1]);
-	jo_printf(0,10, "cursor2 X:%d Y:%d",cursorPos[currentMenuOption][2],cursorPos[currentMenuOption][3]);
+	if (DEBUG)
+		print_debug();
+
 }
 void reset(void){
-	bs = 3;
-	bvelx = 3;
-	bvely = 0;
+	ball.speed = 3;
+	ball.velx = 3;
+	ball.vely = 0;
 	score[0] = 0,score[1]=0;
 	winner = 0;
-	bx = JO_TV_WIDTH/2 -8;
-	by = JO_TV_HEIGHT/2 -8;
-	p1y = JO_TV_HEIGHT/2-31;
-	p2y = JO_TV_HEIGHT/2-31;
+	ball.x = JO_TV_WIDTH/2 -8;
+	ball.y = JO_TV_HEIGHT/2 -8;
+	p1.y = JO_TV_HEIGHT/2-31;
+	p2.y = JO_TV_HEIGHT/2-31;
 }
+//TODO work_it_good
 void spawn_modifier(void){
 	test2.id=0;
 	test2.type=0;
 	test2.ttl=10;
-	test2.x=120;
+	test2.x=rand()%JO_TV_WIDTH;
 	test2.y=JO_TV_HEIGHT/2;
 	test2.w=0;
 	test2.sprite=0;
-	test2.animationId=jo_create_sprite_anim(powSprites[test2.sprite], 5, 5);
+	test2.animationId=MOD_ANIMATION;
 	jo_start_sprite_anim_loop(test2.animationId);
 }
 void			my_gamepad(void)
@@ -233,14 +226,18 @@ void			my_gamepad(void)
 	if(currentState == GAME){
 		if (!jo_is_pad1_available())
 			return ;
-		if (jo_is_pad1_key_pressed(JO_KEY_UP) && p1y-p1vel > 0)
-			p1y -= p1vel;
-		if (jo_is_pad1_key_pressed(JO_KEY_DOWN) && p1y+p1h+p1vel < JO_TV_HEIGHT)
-			p1y += p1vel;
+		if (jo_is_pad1_key_pressed(JO_KEY_UP) && p1.y-p1.vel > 0)
+			p1.y -= p1.vel;
+		if (jo_is_pad1_key_pressed(JO_KEY_DOWN) && p1.y+p1.h+p1.vel < JO_TV_HEIGHT)
+			p1.y += p1.vel;
 		if (jo_is_pad1_key_pressed(JO_KEY_START) && (winner > 0 ) )
 			reset();
+		if (jo_is_pad1_key_pressed(JO_KEY_START) )
+			jo_core_suspend();
 		if (jo_is_pad1_key_pressed(JO_KEY_A))
 			spawn_modifier();
+		if (jo_is_pad1_key_pressed(JO_KEY_B))
+			DEBUG = !DEBUG;
 	/* 
 		if (jo_is_pad1_key_pressed(JO_KEY_A))
 			jo_audio_play_cd_track(2, 2, 1);
@@ -251,18 +248,19 @@ void			my_gamepad(void)
 		//Player2
 		if(!jo_is_pad2_available())
 			return;
-		if (jo_is_pad2_key_pressed(JO_KEY_UP) && p2y-p2vel > 0)
-			p2y -= p2vel;
-		if (jo_is_pad2_key_pressed(JO_KEY_DOWN) && p2y+p2h+p2vel < JO_TV_HEIGHT)
-			p2y += p2vel;
+		if (jo_is_pad2_key_pressed(JO_KEY_UP) && p2.y-p2.vel > 0)
+			p2.y -= p2.vel;
+		if (jo_is_pad2_key_pressed(JO_KEY_DOWN) && p2.y+p2.h+p2.vel < JO_TV_HEIGHT)
+			p2.y += p2.vel;
 	}
 	if(currentState == MAIN){
 		if (!jo_is_pad1_available())
 			return ;
-		if(p1Timeout < 0){
+		if(p1.timeout < 0){
 			if (jo_is_pad1_key_pressed(JO_KEY_A)){
-				if(currentMenuOption == MULTIPLAYER)
+				if(currentMenuOption == MULTIPLAYER){
 					currentState = GAME;
+				}
 			}
 			if (jo_is_pad1_key_pressed(JO_KEY_C)){
 				if (jo_is_pad1_key_pressed(JO_KEY_UP))
@@ -294,19 +292,19 @@ void			my_gamepad(void)
 			}
 			if (jo_is_pad1_key_pressed(JO_KEY_UP)){
 				currentMenuOption--;
-				p1Timeout = iptimeout;
+				p1.timeout = INPUT_TIMEOUT;
 				if (currentMenuOption == -1)
 					currentMenuOption = 1;
 			}
 			if (jo_is_pad1_key_pressed(JO_KEY_DOWN)){
 				currentMenuOption++;
-				p1Timeout = iptimeout;
+				p1.timeout = INPUT_TIMEOUT;
 				if (currentMenuOption > 1)
 					currentMenuOption = 0;
 			}
 			
 		}else{
-			p1Timeout--;
+			p1.timeout--;
 		}
 	}
 }
@@ -316,24 +314,17 @@ void			load_audio(void){
 void load_pow_sprites(void){
 	powSprites[0] =jo_sprite_add_image_pack("PMAXBALL", "PMB.TEX", JO_COLOR_Black);
 }
-void change_background(char background[]){
-	//Background
-    jo_img      bg;
-    bg.data = NULL;
-    jo_tga_loader(&bg, "BG", background, JO_COLOR_Transparent);
-    jo_set_background_sprite(&bg, 0, 0);
-    jo_free_img(&bg);	
-}
+
 void			jo_main(void)
 {
 	jo_core_init(JO_COLOR_Black);
-	p1Sprite = jo_sprite_add_tga("TEX", "P1.TGA", JO_COLOR_Transparent);
-	p2Sprite = jo_sprite_add_tga("TEX", "P2.TGA", JO_COLOR_Transparent);
+	p1.sprite = jo_sprite_add_tga("TEX", "P1.TGA", JO_COLOR_Transparent);
+	p2.sprite = jo_sprite_add_tga("TEX", "P2.TGA", JO_COLOR_Transparent);
 	selSprite = jo_sprite_add_tga("TEX","SEL.TGA",JO_COLOR_Green);
-	ballSprite = jo_sprite_add_tga("TEX","BALL.TGA",JO_COLOR_Black);
+	sprite_ball = jo_sprite_add_tga("TEX","BALL.TGA",JO_COLOR_Black);
+	ball.sprite = sprite_ball;
 	load_pow_sprites();
 	/* Then, you create the animation by giving the first sprite Id, the total of sprites, and the framerate */
-	ring_anim_id = jo_create_sprite_anim(powSprites[0], 5, 5);
 	test.id=0;
 	test.type=0;
 	test.ttl=10;
@@ -341,9 +332,11 @@ void			jo_main(void)
 	test.y=JO_TV_HEIGHT/2;
 	test.w=0;
 	test.sprite=0;
-	test.animationId=jo_create_sprite_anim(powSprites[test.sprite], 5, 5);
+	MOD_ANIMATION = jo_create_sprite_anim(powSprites[test.sprite], 5, 5);
+	test.animationId=MOD_ANIMATION;
 	/* Finally, you chose the type of animation you wants => next step in my_draw() */
 	jo_start_sprite_anim_loop(test.animationId);
+	change_background("BAK.TGA");
 	//jo_start_sprite_anim_loop(ring_anim_id);
 	//
 	load_audio();
