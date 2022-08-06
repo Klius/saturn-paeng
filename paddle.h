@@ -1,3 +1,9 @@
+typedef enum {
+    PADDLE_MOVE_NONE,
+    PADDLE_MOVE_UP,
+    PADDLE_MOVE_DOWN
+} paddle_movement;
+
 typedef struct t_paddle{
 int x;
 int y;
@@ -7,7 +13,19 @@ int vel;
 int sprite;
 int hit;
 int timeout;
+paddle_movement move;
 } Paddle;
 
-const Paddle PADDLE_P1_DEFAULT = {30,JO_TV_HEIGHT/2-31,8,62,2,0,0,0};
-const Paddle PADDLE_P2_DEFAULT = {JO_TV_WIDTH - 38,JO_TV_HEIGHT/2-31,8,62,2,0,0,0};
+const Paddle PADDLE_P1_DEFAULT = {30,JO_TV_HEIGHT/2-31,8,62,2,0,0,0,PADDLE_MOVE_NONE};
+const Paddle PADDLE_P2_DEFAULT = {JO_TV_WIDTH - 38,JO_TV_HEIGHT/2-31,8,62,2,0,0,0,PADDLE_MOVE_DOWN};
+
+void move_paddle(Paddle* player){
+    if (player->move==PADDLE_MOVE_UP && player->y-player->vel > 0)
+			player->y -= player->vel;
+	if (player->move==PADDLE_MOVE_DOWN && player->y+player->h+player->vel < JO_TV_HEIGHT)
+			player->y += player->vel;
+}
+
+void paddle_draw(Paddle* player){
+    jo_sprite_draw3D2(player->sprite, player->x, player->y, 500);
+}

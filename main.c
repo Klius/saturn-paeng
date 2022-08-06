@@ -125,28 +125,11 @@ void game_draw(void){
 		jo_sprite_draw3D2(jo_get_anim_sprite(test2.animationId), test2.x, test2.y,600);
 	jo_font_printf(my_font, JO_TV_WIDTH/2-80, 20, 4.0f, "%d",score[0]);
 	jo_font_printf(my_font, JO_TV_WIDTH/2+60, 20, 4.0f, "%d",score[1]);
-	if (winner == 0){
-		if(p1.hit == 0){
-			p1.hit = ball_collision(p1.x,p1.y,p1.w,p1.h,&ball);
-			if (p1.hit==10)
-				jo_audio_play_sound(&chime);
-		}else{
-			--p1.hit;
-		}if(p2.hit == 0 ){
-			p2.hit = ball_collision(p2.x,p2.y,p2.w,p2.h,&ball);
-				if (p2.hit==10)
-					jo_audio_play_sound(&chime);
-		}else{
-			--p2.hit;
-		}
-		ball_move(&ball, score);
-		check_score();
-	}
-	else{
+	if (winner > 0){
 		jo_font_printf(my_font, 30, JO_TV_HEIGHT/2-20, 2.0f, "PLAYER %d WINS",winner);
 	}
-	jo_sprite_draw3D2(p1.sprite, p1.x, p1.y, 500);
-	jo_sprite_draw3D2(p2.sprite, p2.x, p2.y, 500);
+	paddle_draw(&p1);
+	paddle_draw(&p2);
 	ball_draw(&ball);
 	
 }
@@ -165,12 +148,6 @@ void my_draw(void)
 {
 	if (currentState == GAME){
 		game_draw();
-		 if (!is_cd_playing)
-    	{
-        	/* the first track is reserved for the game binary so the first track is 2 */
-        	jo_audio_play_cd_track(2, 2, 1);
-        	is_cd_playing = 1;
-    	}
 	}else if (currentState == MAIN){
 		main_menu_draw();
 	}
@@ -201,37 +178,45 @@ void spawn_modifier(void){
 	test2.animationId=MOD_ANIMATION;
 	jo_start_sprite_anim_loop(test2.animationId);
 }
-void			my_gamepad(void)
+void game_input(void){
+
+		if (jo_is_pad1_available()){
+			if (jo_is_pad1_key_pressed(JO_KEY_UP))
+				p1.move = PADDLE_MOVE_UP;
+			else if (jo_is_pad1_key_pressed(JO_KEY_DOWN))
+				p1.move = PADDLE_MOVE_DOWN;
+			else
+				p1.move = PADDLE_MOVE_NONE;
+			if (jo_is_pad1_key_pressed(JO_KEY_START) && (winner > 0 ) )
+				reset();
+			else if (jo_is_pad1_key_pressed(JO_KEY_START) )
+				jo_core_suspend();
+			if (jo_is_pad1_key_pressed(JO_KEY_A))
+				spawn_modifier();
+			if (jo_is_pad1_key_pressed(JO_KEY_B))
+				DEBUG = !DEBUG;
+		}
+		if (jo_is_pad2_available()){
+			if (jo_is_pad2_key_pressed(JO_KEY_UP))
+				p2.move = PADDLE_MOVE_UP;
+			else if (jo_is_pad2_key_pressed(JO_KEY_DOWN))
+				p2.move = PADDLE_MOVE_DOWN;
+			else
+				p2.move = PADDLE_MOVE_NONE;
+			if (jo_is_pad2_key_pressed(JO_KEY_START) && (winner > 0 ) )
+				reset();
+			else if (jo_is_pad2_key_pressed(JO_KEY_START) )
+				jo_core_suspend();
+			if (jo_is_pad2_key_pressed(JO_KEY_A))
+				spawn_modifier();
+			if (jo_is_pad2_key_pressed(JO_KEY_B))
+				DEBUG = !DEBUG;
+		}
+}
+void read_input(void)
 {
 	if(currentState == GAME){
-		if (!jo_is_pad1_available())
-			return ;
-		if (jo_is_pad1_key_pressed(JO_KEY_UP) && p1.y-p1.vel > 0)
-			p1.y -= p1.vel;
-		if (jo_is_pad1_key_pressed(JO_KEY_DOWN) && p1.y+p1.h+p1.vel < JO_TV_HEIGHT)
-			p1.y += p1.vel;
-		if (jo_is_pad1_key_pressed(JO_KEY_START) && (winner > 0 ) )
-			reset();
-		if (jo_is_pad1_key_pressed(JO_KEY_START) )
-			jo_core_suspend();
-		if (jo_is_pad1_key_pressed(JO_KEY_A))
-			spawn_modifier();
-		if (jo_is_pad1_key_pressed(JO_KEY_B))
-			DEBUG = !DEBUG;
-	/* 
-		if (jo_is_pad1_key_pressed(JO_KEY_A))
-			jo_audio_play_cd_track(2, 2, 1);
-		if (jo_is_pad1_key_down(JO_KEY_B))
-			draw_circle_at_cursor_pos(40);
-		
-		*/
-		//Player2
-		if(!jo_is_pad2_available())
-			return;
-		if (jo_is_pad2_key_pressed(JO_KEY_UP) && p2.y-p2.vel > 0)
-			p2.y -= p2.vel;
-		if (jo_is_pad2_key_pressed(JO_KEY_DOWN) && p2.y+p2.h+p2.vel < JO_TV_HEIGHT)
-			p2.y += p2.vel;
+		game_input();
 	}
 	if(currentState == MAIN){
 		if (!jo_is_pad1_available())
@@ -288,6 +273,41 @@ void			my_gamepad(void)
 		}
 	}
 }
+void update_game(void){
+	if (winner == 0){
+		move_paddle(&p1);
+		move_paddle(&p2);
+		if(p1.hit == 0){
+			p1.hit = ball_collision(p1.x,p1.y,p1.w,p1.h,&ball);
+			if (p1.hit==10)
+				jo_audio_play_sound(&chime);
+		}
+		else{
+			--p1.hit;
+		}if(p2.hit == 0 ){
+			p2.hit = ball_collision(p2.x,p2.y,p2.w,p2.h,&ball);
+				if (p2.hit==10)
+					jo_audio_play_sound(&chime);
+		}else{
+			--p2.hit;
+		}
+
+		ball_move(&ball, score);
+		check_score();
+	}
+
+}
+void update(void){
+	read_input();
+	if (currentState == GAME)
+		if (!is_cd_playing)
+    	{
+        	/* the first track is reserved for the game binary so the first track is 2 */
+        	jo_audio_play_cd_track(2, 2, 1);
+        	is_cd_playing = 1;
+    	}
+		update_game();
+}
 void			load_audio(void){
 	jo_audio_load_pcm("CHIME.PCM",JoSoundMono16Bit, &chime);
 }
@@ -316,14 +336,14 @@ void			jo_main(void)
 	test.animationId=MOD_ANIMATION;
 	/* Finally, you chose the type of animation you wants => next step in my_draw() */
 	jo_start_sprite_anim_loop(test.animationId);
-	change_background("BAK.TGA");
+	change_background("BACK.TGA");
 	//jo_start_sprite_anim_loop(ring_anim_id);
 	//
 	load_audio();
 	
 	my_font = jo_font_load(JO_ROOT_DIR, "FONT.TGA", JO_COLOR_Green, 8, 8, 2, "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ!\"?=%&',.()*+-/");
 	jo_core_add_callback(my_draw);
-	jo_core_add_callback(my_gamepad);
+	jo_core_add_callback(update);
 	jo_core_run();
 }
 
