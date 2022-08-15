@@ -27,34 +27,12 @@
 */
 
 #include <jo/jo.h>
+#include "enums.h"
 #include "ball.h"
 #include "paddle.h"
-/*
-**
-** Structures
-**
-*/
-struct mod {
-	int id;
-	int type;
-	int ttl;
-	int x;
-	int y;
-	int w;
-	int sprite;
-	int animationId;
-};
-/*
-*
-* POWERUPS to make
-* confusion(inverted controls)
-* Max/min Ball
-* Max/min player
-* speed player
-* wall
-*/
-int ring_anim_id=0;
-int powSprites[2];
+#include "powerup.h"
+
+
 static jo_font      *my_font;
 static jo_sound     chime;
 static int INPUT_TIMEOUT = 10;
@@ -68,9 +46,10 @@ short winner = 0;
 //Audio
 bool is_cd_playing = 0;
 //main menu
-enum MAIN_OP {MULTIPLAYER,MEN_OPTIONS};
-enum MAIN_OP currentMenuOption = MULTIPLAYER;
+typedef enum {MULTIPLAYER,MEN_OPTIONS} MAIN_OP;
+MAIN_OP currentMenuOption = MULTIPLAYER;
 
+Powerup powerup_pool[3];
 
 int cursorPos[2][4] = {
 	{98,110,208,120},
@@ -78,10 +57,9 @@ int cursorPos[2][4] = {
 };
 int selSprite=0;
 //STATES
-enum STATE {MAIN, GAME, OPTIONS};
-enum STATE currentState = MAIN;
-bool DEBUG = false; 
-struct mod test,test2;
+typedef enum {MAIN, GAME, OPTIONS} GAME_STATE;
+GAME_STATE currentState = MAIN;
+bool DEBUG = TRUE; 
 
 int MOD_ANIMATION;
 /******************************************************
@@ -105,9 +83,11 @@ void print_debug(void){
 		jo_printf(0,1,"p1hit: %d",p1.hit);
 		jo_printf(0,2, "p2hit:%d",p2.hit);
 		jo_printf(0,5, "p1y:%d  TVHEIGHT:%d",p1.y+p1.h+p1.vel,JO_TV_HEIGHT);
+		jo_printf(0,6, "POW 0 X:%d ttl:%d",powerup_pool[0].x,powerup_pool[0].ttl);
+		
 	}
-	if (currentState == MAIN){
-		jo_printf(0,6, "currentMenuOption:%d ",currentMenuOption);
+	else if (currentState == MAIN){
+		jo_printf(0,7, "currentMenuOption:%d ",currentMenuOption);
 		jo_printf(0,9, "cursor1 X:%d Y:%d",cursorPos[currentMenuOption][0],cursorPos[currentMenuOption][1]);
 		jo_printf(0,10, "cursor2 X:%d Y:%d",cursorPos[currentMenuOption][2],cursorPos[currentMenuOption][3]);
 	}
@@ -120,9 +100,11 @@ void check_score(void){
 	}
 }
 void game_draw(void){
-	jo_sprite_draw3D2(jo_get_anim_sprite(test.animationId), test.x, test.y,600);
-	if (test2.id == 0)
-		jo_sprite_draw3D2(jo_get_anim_sprite(test2.animationId), test2.x, test2.y,600);
+	for (int i=0;i<3;i++){
+		if ((powerup_pool[i].ttl <= 0) || (powerup_pool[i].activated))
+				continue;
+		powerup_draw(&powerup_pool[i]);
+	}
 	jo_font_printf(my_font, JO_TV_WIDTH/2-80, 20, 4.0f, "%d",score[0]);
 	jo_font_printf(my_font, JO_TV_WIDTH/2+60, 20, 4.0f, "%d",score[1]);
 	if (winner > 0){
@@ -166,18 +148,6 @@ void reset(void){
 	p1.y = JO_TV_HEIGHT/2-31;
 	p2.y = JO_TV_HEIGHT/2-31;
 }
-//TODO work_it_good
-void spawn_modifier(void){
-	test2.id=0;
-	test2.type=0;
-	test2.ttl=10;
-	test2.x=rand()%JO_TV_WIDTH;
-	test2.y=JO_TV_HEIGHT/2;
-	test2.w=0;
-	test2.sprite=0;
-	test2.animationId=MOD_ANIMATION;
-	jo_start_sprite_anim_loop(test2.animationId);
-}
 void game_input(void){
 
 		if (jo_is_pad1_available()){
@@ -192,7 +162,7 @@ void game_input(void){
 			else if (jo_is_pad1_key_pressed(JO_KEY_START) )
 				jo_core_suspend();
 			if (jo_is_pad1_key_pressed(JO_KEY_A))
-				spawn_modifier();
+				powerup_pool[0] = powerup_spawn();
 			if (jo_is_pad1_key_pressed(JO_KEY_B))
 				DEBUG = !DEBUG;
 		}
@@ -208,7 +178,7 @@ void game_input(void){
 			else if (jo_is_pad2_key_pressed(JO_KEY_START) )
 				jo_core_suspend();
 			if (jo_is_pad2_key_pressed(JO_KEY_A))
-				spawn_modifier();
+				//spawn_modifier();
 			if (jo_is_pad2_key_pressed(JO_KEY_B))
 				DEBUG = !DEBUG;
 		}
@@ -273,6 +243,10 @@ void read_input(void)
 		}
 	}
 }
+void apply_powerup(int type){
+	if (type == BIG_BALL)
+		ball_powerup(type,&ball);
+}
 void update_game(void){
 	if (winner == 0){
 		move_paddle(&p1);
@@ -291,15 +265,26 @@ void update_game(void){
 		}else{
 			--p2.hit;
 		}
-
+		for(int i = 0; i<3;i++){
+			if (powerup_pool[i].activated)
+					continue;
+			else if ((powerup_pool[i].ttl <= 0) && (rand()%10>7) )
+				powerup_pool[i] = powerup_spawn();
+			
+			powerup_update(&powerup_pool[i]);
+			powerup_collision(&powerup_pool[i],&ball);
+			if (powerup_pool[i].activated)
+				apply_powerup(powerup_pool[i].type);	
+		}
 		ball_move(&ball, score);
 		check_score();
 	}
 
 }
 void update(void){
+	jo_fixed_point_time();
 	read_input();
-	if (currentState == GAME)
+	if (currentState == GAME){
 		if (!is_cd_playing)
     	{
         	/* the first track is reserved for the game binary so the first track is 2 */
@@ -307,12 +292,10 @@ void update(void){
         	is_cd_playing = 1;
     	}
 		update_game();
+	}
 }
 void			load_audio(void){
 	jo_audio_load_pcm("CHIME.PCM",JoSoundMono16Bit, &chime);
-}
-void load_pow_sprites(void){
-	powSprites[0] =jo_sprite_add_image_pack("PMAXBALL", "PMB.TEX", JO_COLOR_Black);
 }
 
 void			jo_main(void)
@@ -323,22 +306,13 @@ void			jo_main(void)
 	selSprite = jo_sprite_add_tga("TEX","SEL.TGA",JO_COLOR_Green);
 	sprite_ball = jo_sprite_add_tga("TEX","BALL.TGA",JO_COLOR_Black);
 	ball.sprite = sprite_ball;
-	load_pow_sprites();
-	/* Then, you create the animation by giving the first sprite Id, the total of sprites, and the framerate */
-	test.id=0;
-	test.type=0;
-	test.ttl=10;
-	test.x=50;
-	test.y=JO_TV_HEIGHT/2;
-	test.w=0;
-	test.sprite=0;
-	MOD_ANIMATION = jo_create_sprite_anim(powSprites[test.sprite], 5, 5);
-	test.animationId=MOD_ANIMATION;
-	/* Finally, you chose the type of animation you wants => next step in my_draw() */
-	jo_start_sprite_anim_loop(test.animationId);
+	powerup_init();
+	for (int i = 0; i< 3;i++){
+		powerup_pool[i] = powerup_spawn();
+	}
+	
+	
 	change_background("BACK.TGA");
-	//jo_start_sprite_anim_loop(ring_anim_id);
-	//
 	load_audio();
 	
 	my_font = jo_font_load(JO_ROOT_DIR, "FONT.TGA", JO_COLOR_Green, 8, 8, 2, "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ!\"?=%&',.()*+-/");

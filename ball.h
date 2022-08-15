@@ -6,8 +6,9 @@ typedef struct t_ball{
     float speed;
     float velx;
     float vely;
+	int big_ball;
 } Ball;
-const struct t_ball T_BALL_DEFAULT = {0,JO_TV_WIDTH/2 -8,JO_TV_HEIGHT/2 -8,16,3,3,0};
+const struct t_ball T_BALL_DEFAULT = {0,JO_TV_WIDTH/2 -8,JO_TV_HEIGHT/2 -8,16,3,3,0,0};
 
 int			ball_collision(int px, int py,int pw, int ph,Ball* ball){
 	if((ball->x < px+pw) && (px < ball->x+ball->w) && (ball->y < py+ph) && (py < ball->y+ball->w))
@@ -56,7 +57,17 @@ void ball_move(Ball* ball,int *score){
 }
 
 void ball_draw(Ball* ball){
+	if (ball->big_ball > 0)
+		jo_sprite_change_sprite_scale(2);
 	jo_sprite_draw3D2(ball->sprite,ball->x,ball->y,500);
+	jo_sprite_change_sprite_scale(1);
+}
+
+void ball_powerup(int type,Ball* ball){
+	if (type == BIG_BALL){
+		ball->big_ball = 50000;
+		ball->w = 32;
+	}
 }
 /*
 ** END OF FILE
