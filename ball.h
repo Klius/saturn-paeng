@@ -65,10 +65,21 @@ void ball_draw(Ball* ball){
 
 void ball_powerup(int type,Ball* ball){
 	if (type == BIG_BALL){
-		ball->big_ball = 50000;
+		ball->big_ball = 1;
 		ball->w = 32;
+		ball->speed = 1;
 	}
 }
+void ball_powerdown(int type,Ball* ball){
+	if (type == BIG_BALL){
+		ball->w = 16;
+		ball->speed = 3;
+		ball->big_ball = 0;
+	}
+}
+
+
+
 /*
 ** END OF FILE
 */

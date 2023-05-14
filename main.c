@@ -49,6 +49,7 @@ bool is_cd_playing = 0;
 typedef enum {MULTIPLAYER,MEN_OPTIONS} MAIN_OP;
 MAIN_OP currentMenuOption = MULTIPLAYER;
 
+int MAX_POWERUPS = 1;
 Powerup powerup_pool[3];
 
 int cursorPos[2][4] = {
@@ -71,7 +72,7 @@ void change_background(char* background){
 	//Background
     jo_img      bg;
     bg.data = NULL;
-    jo_tga_loader(&bg, "BG", background, JO_COLOR_Black);
+    jo_tga_loader(&bg, "BG", background, JO_COLOR_Transparent);
     jo_set_background_sprite(&bg, 0, 0);
     jo_free_img(&bg);	
 }
@@ -83,7 +84,7 @@ void print_debug(void){
 		jo_printf(0,1,"p1hit: %d",p1.hit);
 		jo_printf(0,2, "p2hit:%d",p2.hit);
 		jo_printf(0,5, "p1y:%d  TVHEIGHT:%d",p1.y+p1.h+p1.vel,JO_TV_HEIGHT);
-		jo_printf(0,6, "POW 0 X:%d ttl:%d",powerup_pool[0].x,powerup_pool[0].ttl);
+		jo_printf(0,6, "POW 0 X:%d ttl:%d State:%d",powerup_pool[0].x,powerup_pool[0].ttl,powerup_pool[0].state);
 		
 	}
 	else if (currentState == MAIN){
@@ -101,7 +102,7 @@ void check_score(void){
 }
 void game_draw(void){
 	for (int i=0;i<3;i++){
-		if ((powerup_pool[i].ttl <= 0) || (powerup_pool[i].activated))
+		if ((powerup_pool[i].ttl <= 0) || (powerup_pool[i].state != STANDBY))
 				continue;
 		powerup_draw(&powerup_pool[i]);
 	}
@@ -159,8 +160,8 @@ void game_input(void){
 				p1.move = PADDLE_MOVE_NONE;
 			if (jo_is_pad1_key_pressed(JO_KEY_START) && (winner > 0 ) )
 				reset();
-			else if (jo_is_pad1_key_pressed(JO_KEY_START) )
-				jo_core_suspend();
+			//else if (jo_is_pad1_key_pressed(JO_KEY_START) )
+			//	jo_core_suspend();
 			if (jo_is_pad1_key_pressed(JO_KEY_A))
 				powerup_pool[0] = powerup_spawn();
 			if (jo_is_pad1_key_pressed(JO_KEY_B))
@@ -247,6 +248,10 @@ void apply_powerup(int type){
 	if (type == BIG_BALL)
 		ball_powerup(type,&ball);
 }
+void apply_powerdown(int type){
+	if (type == BIG_BALL)
+		ball_powerdown(type,&ball);
+}
 void update_game(void){
 	if (winner == 0){
 		move_paddle(&p1);
@@ -265,16 +270,23 @@ void update_game(void){
 		}else{
 			--p2.hit;
 		}
-		for(int i = 0; i<3;i++){
-			if (powerup_pool[i].activated)
-					continue;
-			else if ((powerup_pool[i].ttl <= 0) && (rand()%10>7) )
+		for(int i = 0; i<MAX_POWERUPS;i++){
+			if ((powerup_pool[i].state == DEAD)&&(powerup_pool[i].ttl < 0) && (rand()%10>8.9) )
 				powerup_pool[i] = powerup_spawn();
 			
 			powerup_update(&powerup_pool[i]);
 			powerup_collision(&powerup_pool[i],&ball);
-			if (powerup_pool[i].activated)
-				apply_powerup(powerup_pool[i].type);	
+			if (powerup_pool[i].state == ACTIVE){
+				apply_powerup(powerup_pool[i].type);
+				powerup_pool[i].state = APPLIED;
+			}
+			else if (powerup_pool[i].state == APPLIED && powerup_pool[i].ttl<0){
+				apply_powerdown(powerup_pool[i].type);
+				powerup_pool[i].state = DEAD;
+			}
+			else if(powerup_pool[i].state == STANDBY && powerup_pool[i].ttl <0){
+				powerup_pool[i].state = DEAD;
+			}
 		}
 		ball_move(&ball, score);
 		check_score();
@@ -307,7 +319,7 @@ void			jo_main(void)
 	sprite_ball = jo_sprite_add_tga("TEX","BALL.TGA",JO_COLOR_Black);
 	ball.sprite = sprite_ball;
 	powerup_init();
-	for (int i = 0; i< 3;i++){
+	for (int i = 0; i< MAX_POWERUPS;i++){
 		powerup_pool[i] = powerup_spawn();
 	}
 	

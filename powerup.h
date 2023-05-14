@@ -16,7 +16,7 @@ typedef struct t_powerup {
 	int y;
 	int w;
     int h;
-    bool activated;
+    int state;
 } Powerup;
 
 int powerup_sprites[2];
@@ -29,7 +29,7 @@ void powerup_init(void){
 }
 
 Powerup powerup_spawn(void){
-    Powerup pow = {0,BIG_BALL,MAX_TTL,rand()%JO_TV_WIDTH,rand()%JO_TV_HEIGHT,16,16,false};
+    Powerup pow = {0,BIG_BALL,MAX_TTL,rand()%JO_TV_WIDTH,rand()%JO_TV_HEIGHT,16,16,STANDBY};
     jo_start_sprite_anim_loop(powerup_animation[BIG_BALL]);
     return pow;
 }
@@ -45,6 +45,9 @@ void powerup_draw(Powerup* pow){
     jo_sprite_draw3D2(jo_get_anim_sprite(powerup_animation[pow->type]), pow->x, pow->y,600);
 }
 void powerup_collision(Powerup* pow, Ball* ball){
-    if((ball->x < pow->x+pow->w) && (pow->x < ball->x+ball->w) && (ball->y < pow->y+pow->h) && (pow->y < ball->y+ball->w))
-	    pow->activated = true;
+    if((pow->state == STANDBY) && (ball->x < pow->x+pow->w) && 
+       (pow->x < ball->x+ball->w) && (ball->y < pow->y+pow->h) && (pow->y < ball->y+ball->w)){
+	    pow->state = ACTIVE;
+        pow->ttl = MAX_TTL; //TODO set right amount per type
+    }
 }
