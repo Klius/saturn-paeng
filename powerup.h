@@ -24,8 +24,12 @@ int powerup_animation[2];
 int MAX_TTL = 50000;//in_seconds
 
 void powerup_init(void){
+    //Load sprites
     powerup_sprites[BIG_BALL] = jo_sprite_add_image_pack("PMAXBALL", "PMB.TEX", JO_COLOR_Black);
+    powerup_sprites[TINY_BALL] = jo_sprite_add_image_pack("PMINBALL", "PMIN.TEX", JO_COLOR_Black);
+    //Load animations
     powerup_animation[BIG_BALL] = jo_create_sprite_anim(powerup_sprites[BIG_BALL], 5, 5);
+    powerup_animation[TINY_BALL] = jo_create_sprite_anim(powerup_sprites[TINY_BALL], 5, 5);
 }
 
 Powerup powerup_spawn(void){
