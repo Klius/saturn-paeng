@@ -40,7 +40,8 @@ Powerup powerup_spawn(void){
 
 void powerup_update(Powerup* pow){
     //float delta = 0.1 * delta_time;
-    pow->ttl -= delta_time;
+    //TODO fix this crap
+    pow->ttl -= 0.1//delta_time;
 }
 
 
