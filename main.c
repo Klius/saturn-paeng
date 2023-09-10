@@ -77,18 +77,20 @@ void change_background(char* background){
     jo_free_img(&bg);	
 }
 void print_debug(void){
-	jo_printf(0, 3, "Sprite memory usage: %d%% ", jo_sprite_usage_percent()); 
-	jo_printf(0, 4, "Dynamic memory usage: %d%%  ", jo_memory_usage_percent());
+	jo_clear_screen();
+	jo_printf(0, 3, "Sprite memory usage: %d%%", jo_sprite_usage_percent()); 
+	jo_printf(0, 4, "Dynamic memory usage: %d%%", jo_memory_usage_percent());
 	if (currentState == GAME){
 		jo_printf(0,0,"bx: %d by:%d",ball.x,ball.y);
 		jo_printf(0,1,"p1hit: %d",p1.hit);
 		jo_printf(0,2, "p2hit:%d",p2.hit);
 		jo_printf(0,5, "p1y:%d  TVHEIGHT:%d",p1.y+p1.h+p1.vel,JO_TV_HEIGHT);
 		jo_printf(0,6, "POW 0 X:%d ttl:%d State:%d",powerup_pool[0].x,powerup_pool[0].ttl,powerup_pool[0].state);
+		jo_printf(0,7, "delta_time: %d, time_in_seconds:%d",delta_time,time_in_seconds);
 		
 	}
 	else if (currentState == MAIN){
-		jo_printf(0,7, "currentMenuOption:%d ",currentMenuOption);
+		jo_printf(0,7, "currentMenuOption:%d",currentMenuOption);
 		jo_printf(0,9, "cursor1 X:%d Y:%d",cursorPos[currentMenuOption][0],cursorPos[currentMenuOption][1]);
 		jo_printf(0,10, "cursor2 X:%d Y:%d",cursorPos[currentMenuOption][2],cursorPos[currentMenuOption][3]);
 	}
@@ -245,11 +247,11 @@ void read_input(void)
 	}
 }
 void apply_powerup(int type){
-	if (type == BIG_BALL)
+	if (type == BIG_BALL || type == TINY_BALL)
 		ball_powerup(type,&ball);
 }
 void apply_powerdown(int type){
-	if (type == BIG_BALL)
+	if (type == BIG_BALL || type == TINY_BALL)
 		ball_powerdown(type,&ball);
 }
 void update_game(void){
@@ -280,7 +282,7 @@ void update_game(void){
 				apply_powerup(powerup_pool[i].type);
 				powerup_pool[i].state = APPLIED;
 			}
-			else if (powerup_pool[i].state == APPLIED && powerup_pool[i].ttl<0){
+			else if (powerup_pool[i].state == APPLIED && powerup_pool[i].duration<0){
 				apply_powerdown(powerup_pool[i].type);
 				powerup_pool[i].state = DEAD;
 			}
@@ -306,11 +308,11 @@ void update(void){
 		update_game();
 	}
 }
-void			load_audio(void){
+void load_audio(void){
 	jo_audio_load_pcm("CHIME.PCM",JoSoundMono16Bit, &chime);
 }
 
-void			jo_main(void)
+void jo_main(void)
 {
 	jo_core_init(JO_COLOR_Black);
 	p1.sprite = jo_sprite_add_tga("TEX", "P1.TGA", JO_COLOR_Transparent);

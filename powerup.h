@@ -17,11 +17,12 @@ typedef struct t_powerup {
 	int w;
     int h;
     int state;
+    int duration;
 } Powerup;
 
-int powerup_sprites[2];
-int powerup_animation[2];
-int MAX_TTL = 50000;//in_seconds
+int powerup_sprites[6];
+int powerup_animation[6];
+int MAX_TTL = 5000;//in_seconds
 
 void powerup_init(void){
     //Load sprites
@@ -32,16 +33,28 @@ void powerup_init(void){
     powerup_animation[TINY_BALL] = jo_create_sprite_anim(powerup_sprites[TINY_BALL], 5, 5);
 }
 
+int powerup_selector(void){
+    int r = rand()%100;
+    int pow_select = BIG_BALL;
+    if ( r >0){
+        pow_select = TINY_BALL;
+    }
+    return pow_select;
+}
+
 Powerup powerup_spawn(void){
-    Powerup pow = {0,BIG_BALL,MAX_TTL,rand()%JO_TV_WIDTH,rand()%JO_TV_HEIGHT,16,16,STANDBY};
+    // TODO setup ttl
+    Powerup pow = {0,powerup_selector(),MAX_TTL,rand()%JO_TV_WIDTH,rand()%JO_TV_HEIGHT,16,16,STANDBY,5000};
     jo_start_sprite_anim_loop(powerup_animation[BIG_BALL]);
     return pow;
 }
 
 void powerup_update(Powerup* pow){
-    //float delta = 0.1 * delta_time;
-    //TODO fix this crap
-    pow->ttl -= 0.1//delta_time;
+    int delta = delta_time/60;
+    if (pow->state != ACTIVE)
+        pow->ttl -= delta;
+    if (pow->state == APPLIED)
+        pow->duration -= delta;
 }
 
 
