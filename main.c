@@ -77,7 +77,7 @@ void change_background(char* background){
     jo_free_img(&bg);	
 }
 void print_debug(void){
-	jo_clear_screen();
+	//jo_clear_screen(); FIXME breaks all lines
 	jo_printf(0, 3, "Sprite memory usage: %d%%", jo_sprite_usage_percent()); 
 	jo_printf(0, 4, "Dynamic memory usage: %d%%", jo_memory_usage_percent());
 	if (currentState == GAME){
