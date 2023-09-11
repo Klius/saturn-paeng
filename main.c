@@ -49,8 +49,8 @@ bool is_cd_playing = 0;
 typedef enum {MULTIPLAYER,MEN_OPTIONS} MAIN_OP;
 MAIN_OP currentMenuOption = MULTIPLAYER;
 
-int MAX_POWERUPS = 1;
-Powerup powerup_pool[3];
+#define MAX_POWERUPS 3
+Powerup powerup_pool[MAX_POWERUPS];
 
 int cursorPos[2][4] = {
 	{98,110,208,120},
@@ -85,8 +85,10 @@ void print_debug(void){
 		jo_printf(0,1,"p1hit: %d",p1.hit);
 		jo_printf(0,2, "p2hit:%d",p2.hit);
 		jo_printf(0,5, "p1y:%d  TVHEIGHT:%d",p1.y+p1.h+p1.vel,JO_TV_HEIGHT);
-		jo_printf(0,6, "POW 0 X:%d ttl:%d State:%d",powerup_pool[0].x,powerup_pool[0].ttl,powerup_pool[0].state);
-		jo_printf(0,7, "delta_time: %d, time_in_seconds:%d",delta_time,time_in_seconds);
+		for (int i =0;i<MAX_POWERUPS;i++){
+			jo_printf(0,6+i, "POW %d X:%d ttl:%d State:%d",i,powerup_pool[i].x,powerup_pool[i].ttl,powerup_pool[i].state);
+		}
+		jo_printf(0,MAX_POWERUPS+1, "delta_time: %d, time_in_seconds:%d",delta_time,time_in_seconds);
 		
 	}
 	else if (currentState == MAIN){
@@ -162,8 +164,7 @@ void game_input(void){
 				p1.move = PADDLE_MOVE_NONE;
 			if (jo_is_pad1_key_pressed(JO_KEY_START) && (winner > 0 ) )
 				reset();
-			//else if (jo_is_pad1_key_pressed(JO_KEY_START) )
-			//	jo_core_suspend();
+
 			if (jo_is_pad1_key_pressed(JO_KEY_A))
 				powerup_pool[0] = powerup_spawn();
 			if (jo_is_pad1_key_pressed(JO_KEY_B))
@@ -273,9 +274,10 @@ void update_game(void){
 			--p2.hit;
 		}
 		for(int i = 0; i<MAX_POWERUPS;i++){
-			if ((powerup_pool[i].state == DEAD)&&(powerup_pool[i].ttl < 0) && (rand()%10>8.9) )
+			if ((powerup_pool[i].state == DEAD)&&(powerup_pool[i].ttl < 0) && (rand()%10>8) )
+			{
 				powerup_pool[i] = powerup_spawn();
-			
+			}
 			powerup_update(&powerup_pool[i]);
 			powerup_collision(&powerup_pool[i],&ball);
 			if (powerup_pool[i].state == ACTIVE){

@@ -1,9 +1,9 @@
 typedef enum {
     BIG_BALL,
     TINY_BALL,
-    LONG_PADDLE,
-    SHORT_PADDLE,
-    MORE_SPEED,
+    LONG_PAD,
+    SHORT_PAD,
+    CONFUSION,
     WALL
 } POWER_TYPE;
 
