@@ -60,7 +60,7 @@ int selSprite=0;
 //STATES
 typedef enum {MAIN, GAME, OPTIONS} GAME_STATE;
 GAME_STATE currentState = MAIN;
-bool DEBUG = TRUE; 
+bool DEBUG = false; 
 
 int MOD_ANIMATION;
 /******************************************************
@@ -250,7 +250,7 @@ void read_input(void)
 int apply_powerup(int type){
 	if (type == BIG_BALL || type == TINY_BALL)
 		ball_powerup(type,&ball);
-	if (type == CONFUSION){
+	if (type > TINY_BALL){
 		if (ball.velx >= 0){
 			paddle_powerup(type,&p1);
 			return P1;
