@@ -19,3 +19,9 @@ typedef enum {
     APPLIED, //2
     DEAD //3
 } POWER_STATES;
+
+typedef enum {
+    BALL, //0
+    P1, //1
+    P2, //2
+} ACTORS;

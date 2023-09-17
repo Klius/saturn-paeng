@@ -247,13 +247,28 @@ void read_input(void)
 		}
 	}
 }
-void apply_powerup(int type){
+int apply_powerup(int type){
 	if (type == BIG_BALL || type == TINY_BALL)
 		ball_powerup(type,&ball);
+	if (type == CONFUSION){
+		if (ball.velx >= 0){
+			paddle_powerup(type,&p1);
+			return P1;
+		}
+		else{
+			paddle_powerup(type,&p2);
+			return P2;
+		}
+	}
+	return BALL;
 }
-void apply_powerdown(int type){
-	if (type == BIG_BALL || type == TINY_BALL)
+void apply_powerdown(int type,int who){
+	if (who == BALL)
 		ball_powerdown(type,&ball);
+	if (who == P1)
+		paddle_powerdown(type,&p1);
+	if (who == P2)
+		paddle_powerdown(type,&p2);	
 }
 void update_game(void){
 	if (winner == 0){
@@ -281,11 +296,12 @@ void update_game(void){
 			powerup_update(&powerup_pool[i]);
 			powerup_collision(&powerup_pool[i],&ball);
 			if (powerup_pool[i].state == ACTIVE){
-				apply_powerup(powerup_pool[i].type);
+				int who = apply_powerup(powerup_pool[i].type);
 				powerup_pool[i].state = APPLIED;
+				powerup_pool[i].who = who;
 			}
 			else if (powerup_pool[i].state == APPLIED && powerup_pool[i].duration<0){
-				apply_powerdown(powerup_pool[i].type);
+				apply_powerdown(powerup_pool[i].type,powerup_pool[i].who);
 				powerup_pool[i].state = DEAD;
 			}
 			else if(powerup_pool[i].state == STANDBY && powerup_pool[i].ttl <0){
@@ -328,7 +344,7 @@ void jo_main(void)
 	}
 	
 	
-	change_background("BACK.TGA");
+	change_background("BAK.TGA");
 	load_audio();
 	
 	my_font = jo_font_load(JO_ROOT_DIR, "FONT.TGA", JO_COLOR_Green, 8, 8, 2, "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ!\"?=%&',.()*+-/");

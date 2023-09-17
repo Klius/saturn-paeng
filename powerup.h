@@ -18,6 +18,7 @@ typedef struct t_powerup {
     int h;
     int state;
     int duration;
+    int who;
 } Powerup;
 
 int powerup_sprites[6];
@@ -57,13 +58,14 @@ int powerup_selector(void){
     else if(r>80){
         pow_select = LONG_PAD;
     }
+//    pow_select = CONFUSION;
     return pow_select;
 }
 
 Powerup powerup_spawn(void){
-    // TODO setup ttl
-    Powerup pow = {0,powerup_selector(),MAX_TTL,rand()%JO_TV_WIDTH,rand()%JO_TV_HEIGHT,16,16,STANDBY,5000};
-    jo_start_sprite_anim_loop(powerup_animation[BIG_BALL]);
+    int type = powerup_selector();
+    Powerup pow = {0,type,MAX_TTL,rand()%JO_TV_WIDTH,rand()%JO_TV_HEIGHT,16,16,STANDBY,5000,1};
+    jo_start_sprite_anim_loop(powerup_animation[type]);
     return pow;
 }
 
