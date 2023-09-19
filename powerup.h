@@ -58,7 +58,7 @@ int powerup_selector(void){
     else if(r>80){
         pow_select = LONG_PAD;
     }
-   pow_select = LONG_PAD;
+   pow_select = SHORT_PAD;
     return pow_select;
 }
 

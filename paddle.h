@@ -6,7 +6,7 @@ int y;
 int w;
 int h;
 int vel;
-int sprite;
+int sprites[3];
 int hit;
 int timeout;
 //int powerups[6];
@@ -43,15 +43,14 @@ void move_paddle(Paddle* player){
 }
 
 void paddle_draw(Paddle* player){
+    int sp = 0;
     if(player->long_pad >0){
-        jo_sprite_change_sprite_scale(2);
+        sp= 1;
     }
     if(player->short_pad >0){
-        jo_sprite_change_sprite_scale(0.5);
+        sp=2;
     }
-    jo_sprite_draw3D2(player->sprite, player->x, player->y, 500);
-
-    jo_sprite_change_sprite_scale(1);
+    jo_sprite_draw3D2(player->sprites[sp], player->x, player->y, 500);
 }
 
 void paddle_powerup(int type,Paddle* paddle){
@@ -61,12 +60,12 @@ void paddle_powerup(int type,Paddle* paddle){
     // FIXME WONKY as FUCK, collisions don't line up with sprite
     if (type == LONG_PAD){
 		paddle->long_pad = 1;
-		paddle->h = 124;
+		paddle->h = 124; 
 		paddle->vel = 1;
 	}
 	if (type == SHORT_PAD){
 		paddle->short_pad = 1;
-		paddle->h = 31;
+		paddle->h = 32;
 		paddle->vel = 5;
 	}
 

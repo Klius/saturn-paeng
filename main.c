@@ -333,8 +333,13 @@ void load_audio(void){
 void jo_main(void)
 {
 	jo_core_init(JO_COLOR_Black);
-	p1.sprite = jo_sprite_add_tga("TEX", "P1.TGA", JO_COLOR_Transparent);
-	p2.sprite = jo_sprite_add_tga("TEX", "P2.TGA", JO_COLOR_Transparent);
+	p1.sprites[0] = jo_sprite_add_tga("TEX", "P1.TGA", JO_COLOR_Transparent);
+	p2.sprites[0] = jo_sprite_add_tga("TEX", "P2.TGA", JO_COLOR_Transparent);
+	p1.sprites[1] = jo_sprite_add_tga("TEX", "P1L.TGA", JO_COLOR_Transparent);
+	p2.sprites[1] = jo_sprite_add_tga("TEX", "P2L.TGA", JO_COLOR_Transparent);
+	p1.sprites[2] = jo_sprite_add_tga("TEX", "P1S.TGA", JO_COLOR_Transparent);
+	p2.sprites[2] = jo_sprite_add_tga("TEX", "P2S.TGA", JO_COLOR_Transparent);
+	
 	selSprite = jo_sprite_add_tga("TEX","SEL.TGA",JO_COLOR_Green);
 	sprite_ball = jo_sprite_add_tga("TEX","BALL.TGA",JO_COLOR_Black);
 	ball.sprite = sprite_ball;
