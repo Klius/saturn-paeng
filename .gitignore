@@ -5,3 +5,4 @@
 *.elf
 *.map
 *.coff
+*.raw

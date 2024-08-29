@@ -6,10 +6,12 @@ RUN git clone https://github.com/johannes-fetz/joengine.git
 
 WORKDIR joengine
 
-#RUN mkdir samples/saturn-paeng
-COPY . samples/saturn-paeng
+RUN ls
+
+RUN mkdir samples samples/saturn-paeng
+#COPY . samples/saturn-paeng
 
 WORKDIR samples/saturn-paeng
 
-RUN ./compile.sh
+# RUN ./compile.sh
 CMD sleep 120

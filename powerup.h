@@ -7,7 +7,7 @@
 * speed player
 * wall
 */
-
+#include <stdlib.h>
 typedef struct t_powerup {
 	int id;
 	int type;
@@ -58,7 +58,7 @@ int powerup_selector(void){
     else if(r>80){
         pow_select = LONG_PAD;
     }
-   pow_select = SHORT_PAD;
+    //pow_select = SHORT_PAD;
     return pow_select;
 }
 
