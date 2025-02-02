@@ -50,7 +50,19 @@ void paddle_draw(Paddle* player){
     if(player->short_pad >0){
         sp=2;
     }
+    if (player-> confusion >= 1){
+        //TODO improve this so it doesn't look as jank
+        if (player-> confusion %8 == 0){
+            jo_set_gouraud_shading_colors(JO_COLOR_Black,JO_COLOR_Black,JO_COLOR_MediumWhite,JO_COLOR_MediumWhite);
+        }
+        else{
+            jo_set_gouraud_shading_colors(JO_COLOR_MediumWhite,JO_COLOR_MediumWhite,JO_COLOR_Black,JO_COLOR_Black);
+        }
+        jo_sprite_enable_gouraud_shading();
+        player-> confusion += 1;
+    }
     jo_sprite_draw3D2(player->sprites[sp], player->x, player->y, 500);
+    jo_sprite_disable_gouraud_shading();
 }
 
 void paddle_powerup(int type,Paddle* paddle){
