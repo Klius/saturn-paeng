@@ -152,6 +152,10 @@ void reset(void){
 	ball.y = JO_TV_HEIGHT/2 -8;
 	p1.y = JO_TV_HEIGHT/2-31;
 	p2.y = JO_TV_HEIGHT/2-31;
+	for (int i;  i<MAX_POWERUPS;i++){
+		apply_powerdown(powerup_pool[i].type,powerup_pool[i].who);
+		powerup_pool[i].state = DEAD;
+	}
 }
 void game_input(void){
 
@@ -251,14 +255,27 @@ int apply_powerup(int type){
 	if (type == BIG_BALL || type == TINY_BALL)
 		ball_powerup(type,&ball);
 	if (type > TINY_BALL){
-		if (ball.velx >= 0){
-			paddle_powerup(type,&p1);
-			return P1;
+		if (type == SHORT_PAD || type == CONFUSION){
+			if (ball.velx >= 0){
+				paddle_powerup(type,&p2);
+				return P2;
+			}
+			else{
+				paddle_powerup(type,&p1);
+				return P1;
+			}	
 		}
 		else{
-			paddle_powerup(type,&p2);
-			return P2;
+			if (ball.velx >= 0){
+				paddle_powerup(type,&p1);
+				return P1;
+			}
+			else{
+				paddle_powerup(type,&p2);
+				return P2;
+			}
 		}
+		
 	}
 	return BALL;
 }
@@ -299,6 +316,16 @@ void update_game(void){
 				int who = apply_powerup(powerup_pool[i].type);
 				powerup_pool[i].state = APPLIED;
 				powerup_pool[i].who = who;
+				//check if the powerup has been applied already
+				for(int j=0; j<MAX_POWERUPS;j++){
+					if (j==i){
+						continue;
+					}
+					if ((powerup_pool[j].type == powerup_pool[i].type) && (powerup_pool[j].who == powerup_pool[i].who)){
+						powerup_pool[i].duration = powerup_pool[j].duration;
+						powerup_pool[j].state = DEAD;
+					}
+				}
 			}
 			else if (powerup_pool[i].state == APPLIED && powerup_pool[i].duration<0){
 				apply_powerdown(powerup_pool[i].type,powerup_pool[i].who);

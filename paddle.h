@@ -54,6 +54,7 @@ void paddle_draw(Paddle* player){
 }
 
 void paddle_powerup(int type,Paddle* paddle){
+    // Let's first check if the powerup has been applied already
 	if (type == CONFUSION){
         paddle -> confusion = 1;
     }

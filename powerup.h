@@ -1,11 +1,11 @@
 /*
 *
 * POWERUPS to make
-* confusion(inverted controls)
-* Max/min Ball
-* Max/min player
-* speed player
-* wall
+* confusion(inverted controls) X
+* Max/min Ball X
+* Max/min player X
+* speed player 
+* wall 
 */
 #include <stdlib.h>
 typedef struct t_powerup {
@@ -30,8 +30,8 @@ void powerup_init(void){
     powerup_sprites[BIG_BALL] = jo_sprite_add_image_pack("PMAXBALL", "PMB.TEX", JO_COLOR_Black);
     powerup_sprites[TINY_BALL] = jo_sprite_add_image_pack("PMINBALL", "PMIN.TEX", JO_COLOR_Black);
     powerup_sprites[CONFUSION] = jo_sprite_add_image_pack("CONF", "PCONF.TEX", JO_COLOR_Black);
-    powerup_sprites[LONG_PAD] = jo_sprite_add_image_pack("PLAC", "PLACE.TEX", JO_COLOR_Black);
-    powerup_sprites[SHORT_PAD] = jo_sprite_add_image_pack("PLAC", "PLACE.TEX", JO_COLOR_Black);
+    powerup_sprites[LONG_PAD] = jo_sprite_add_image_pack("PLONG", "PLONG.TEX", JO_COLOR_Black);
+    powerup_sprites[SHORT_PAD] = jo_sprite_add_image_pack("PSHORT", "PSHORT.TEX", JO_COLOR_Black);
     //Load animations
     powerup_animation[BIG_BALL] = jo_create_sprite_anim(powerup_sprites[BIG_BALL], 5, 5);
     powerup_animation[TINY_BALL] = jo_create_sprite_anim(powerup_sprites[TINY_BALL], 5, 5);
@@ -64,7 +64,7 @@ int powerup_selector(void){
 
 Powerup powerup_spawn(void){
     int type = powerup_selector();
-    Powerup pow = {0,type,MAX_TTL,rand()%JO_TV_WIDTH,rand()%JO_TV_HEIGHT,16,16,STANDBY,5000,1};
+    Powerup pow = {0,type,MAX_TTL,50+rand()%(JO_TV_WIDTH - 100),rand()%(JO_TV_HEIGHT - 100),16,16,STANDBY,5000,1};
     jo_start_sprite_anim_loop(powerup_animation[type]);
     return pow;
 }
